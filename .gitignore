@@ -1,0 +1,8 @@
+# ignore the big a*se csv file
+*.csv
+*.class
+*~
+*.log
+**/
+heap.*
+hash.*
