@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
-public class UseIndex
+public class UseIndex implements dbimpl
 {
     private final String key;
     private int hash;
@@ -57,6 +57,11 @@ public class UseIndex
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        if (found)
+        {
+            System.out.println("here");
+            get_record();
+        }
     }
 
     private void check_bucket(byte[] bucket)
@@ -82,6 +87,30 @@ public class UseIndex
         }
     }
 
+    private void get_record()
+    {
+        RandomAccessFile raf;
+        try
+        {
+            raf = new RandomAccessFile("heap.4096", "r");
+            raf.seek((page_num * 4096) + ((offset - 1) * RECORD_SIZE));
+            byte[] record = new byte[RECORD_SIZE];
+            raf.read(record);
+            printRecord(record, key);
+        }
+        catch (FileNotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+    }
+    
     private void check_overflow()
     {
         RandomAccessFile raf;
@@ -127,12 +156,11 @@ public class UseIndex
     {
         String record = new String(index);
         String BN_NAME = record.substring(0, 200);
-        if (BN_NAME.toLowerCase().contains(key.toLowerCase()))
+        if (BN_NAME.toLowerCase().trim().equals(key.toLowerCase().trim()))
         {
-//            = ByteBuffer.wrap(bRid).getInt()
             this.page_num = ByteBuffer.wrap(page_num).getInt();
             this.offset =  ByteBuffer.wrap(offset).getInt();
-            System.out.println(BN_NAME + " | " + this.page_num + " | " + this.offset);
+            System.out.println(BN_NAME.trim() + " | " + this.page_num + " | " + this.offset);
             return true;
         }
         return false;
@@ -141,5 +169,68 @@ public class UseIndex
     private int get_hash(String key)
     {
         return key.hashCode() & 63;
+    }
+    
+    public void printRecord(byte[] rec, String input)
+    {
+        String record = new String(rec);
+        String BN_NAME = get_field(record, RID_SIZE + REGISTER_NAME_SIZE, RID_SIZE + REGISTER_NAME_SIZE + BN_NAME_SIZE).trim();
+        System.out.println(BN_NAME + " | " + input);
+        if (BN_NAME.toLowerCase().contains(input.toLowerCase()))
+        {
+            String BN_STATUS = get_field(record, BN_STATUS_OFFSET, BN_REG_DT_OFFSET).trim();
+            String BN_REG_DT = get_field(record, BN_REG_DT_OFFSET, BN_CANCEL_DT_OFFSET).trim();
+            String BN_CANCEL_DT = get_field(record, BN_CANCEL_DT_OFFSET, BN_RENEW_DT_OFFSET).trim();
+            String BN_RENEW_DT = get_field(record, BN_RENEW_DT_OFFSET, BN_STATE_NUM_OFFSET).trim();
+            String BN_STATE_NUM = get_field(record, BN_STATE_NUM_OFFSET, BN_STATE_OF_REG_OFFSET).trim();
+            String BN_STATE_OF_REG = get_field(record, BN_STATE_OF_REG_OFFSET, BN_ABN_OFFSET).trim();
+            String BN_ABN = get_field(record, BN_ABN_OFFSET, BN_ABN_OFFSET + BN_ABN_SIZE).trim();
+            System.out.println(BN_NAME + " | "
+                             + BN_STATUS + " | "
+                             + BN_REG_DT + " | "
+                             + BN_CANCEL_DT + " | " 
+                             + BN_RENEW_DT + " | " 
+                             + BN_STATE_NUM + " | " 
+                             + BN_STATE_OF_REG + " | " 
+                             + BN_ABN);
+        }
+    }
+    
+    private String get_field(String record, int start, int end)
+    {
+        String field = record.substring(start, end).trim();
+        return field;
+    }
+
+    @Override
+    public void readArguments(String args[])
+    {
+       if (args.length == 2)
+       {
+          if (isInteger(args[1]))
+          {
+             //readHeap(args[0], Integer.parseInt(args[1]));
+          }
+       }
+       else
+       {
+           System.out.println("Error: only pass in two arguments");
+       }
+    }
+
+    @Override
+    public boolean isInteger(String s)
+    {
+       boolean isValidInt = false;
+       try
+       {
+          Integer.parseInt(s);
+          isValidInt = true;
+       }
+       catch (NumberFormatException e)
+       {
+          e.printStackTrace();
+       }
+       return isValidInt;
     }
 }
