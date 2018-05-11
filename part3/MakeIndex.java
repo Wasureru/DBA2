@@ -9,8 +9,9 @@ public class MakeIndex
 {
     private Bucket[] table = new Bucket[64];
     private ArrayList<Record> overflow_bucket = new ArrayList<>();
-    private ArrayList<ArrayList<Record>> overflow = new ArrayList<>();
-    
+    private ArrayList<ArrayList<Record>> overflow = new ArrayList<ArrayList<Record>>();
+    private int count = 0;
+    private int incount = 0;
     public void add_record(String key, int page_num, int offset)
     {
         int hash = get_hash(key);
@@ -27,7 +28,9 @@ public class MakeIndex
             {
                 if (overflow_bucket.size() == 59)
                 {
-                    overflow.add(overflow_bucket);
+                    ArrayList<Record> add = overflow_bucket;
+                    System.out.println(add.size());
+                    overflow.add(add);
                     overflow_bucket.clear();
                 }
                 overflow_bucket.add(record);
@@ -44,8 +47,28 @@ public class MakeIndex
         return key.hashCode() & 63;
     }
     
+    private void sizes()
+    {
+        int os = 0;
+        int ms = 0;
+        for (ArrayList<Record> a : overflow)
+        {
+            System.out.println(a.size());
+            os += a.size();
+        }
+        os += overflow_bucket.size();
+        for (int index = 0; index < table.length; ++index)
+        {
+            if (table[index] != null)
+            ms += table[index].get_size();
+        }
+        int total = os + ms;
+        System.out.printf("in overflow %d| in main %d| total %d\n", os, ms, total);
+    }
+    
     public void write_hash()
     {
+        //sizes();
         File hashfile = new File("hash." + 4096);
         FileOutputStream fos = null;
         byte[] output = new byte[208];
@@ -59,18 +82,21 @@ public class MakeIndex
                 {
                     output = create_record_for_print(output, record);
                     fos.write(output);
+                    count++;
                 }
                 eofByteAddOn(fos, table[table_index].get_size());
                 }
                 catch(NullPointerException e) { eofByteAddOn(fos, 0);}
             }
-            for (ArrayList<Record> bucket : overflow)
+            for (int index = 0; index < overflow.size(); ++index)
             {
+                ArrayList<Record> bucket = overflow.get(index);
                 for (Record record : bucket)
                 {
-                    System.out.println(record.get_key());
+                    //System.out.println(record.get_key());
                     output = create_record_for_print(output, record);
                     fos.write(output);
+                    count++;
                 }
                 eofByteAddOn(fos, bucket.size());
             }
@@ -78,8 +104,11 @@ public class MakeIndex
             {
                 output = create_record_for_print(output, record);
                 fos.write(output);
+                count++;
             }
             eofByteAddOn(fos, overflow_bucket.size());
+            System.out.println(count);
+            System.out.println(incount);
 
         }
         catch (IOException e)
@@ -93,14 +122,30 @@ public class MakeIndex
         ByteBuffer page_num = ByteBuffer.allocate(4);
         ByteBuffer offset = ByteBuffer.allocate(4);
         page_num.putInt(record.get_page_num());
-        offset.putInt(record.get_page_num());
-        byte[] key = record.get_key().getBytes("utf-8");
-        System.arraycopy(key, 0, output, 0, key.length);
-        System.arraycopy(page_num.array(), 0, output, key.length, 4);
-        System.arraycopy(offset.array(), 0, output, (key.length + page_num.array().length), 4);
+        offset.putInt(record.get_offset());
+        copy(record.get_key(), 200, 0, output);
+        System.arraycopy(page_num.array(), 0, output, 200, 4);
+        System.arraycopy(offset.array(), 0, output, 204, 4);
         
+        incount++;
+        if (record.get_key().toLowerCase().contains("RUSSELL CORPORATE ADVISORY CLUB CONSULTING".toLowerCase()))
+        {
+            //System.out.println(record.get_key() + "|" + record.get_page_num() + "|" + record.get_offset());
+        }
         return output;
     }
+    
+    public void copy(String entry, int SIZE, int DATA_OFFSET, byte[] rec) throws UnsupportedEncodingException
+    {
+        byte[] DATA = new byte[SIZE];
+        byte[] DATA_SRC = entry.trim().getBytes("utf-8");
+        if (entry != "")
+        {
+            System.arraycopy(DATA_SRC, 0, DATA, 0, DATA_SRC.length);
+        }
+        System.arraycopy(DATA, 0, rec, DATA_OFFSET, DATA.length);
+    }
+
     
     public void eofByteAddOn(FileOutputStream fos, int r_num) 
             throws IOException
