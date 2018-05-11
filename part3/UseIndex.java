@@ -132,7 +132,7 @@ public class UseIndex
 //            = ByteBuffer.wrap(bRid).getInt()
             this.page_num = ByteBuffer.wrap(page_num).getInt();
             this.offset =  ByteBuffer.wrap(offset).getInt();
-            System.out.println(key + " | " + this.page_num + " | " + this.offset);
+            System.out.println(BN_NAME + " | " + this.page_num + " | " + this.offset);
             return true;
         }
         return false;

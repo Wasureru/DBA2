@@ -8,10 +8,11 @@ import java.util.ArrayList;
 public class MakeIndex
 {
     private Bucket[] table = new Bucket[64];
-    private ArrayList<Record> overflow_bucket = new ArrayList<>();
-    private ArrayList<ArrayList<Record>> overflow = new ArrayList<ArrayList<Record>>();
+    private Bucket overflow_bucket = new Bucket();
+    private ArrayList<Bucket> overflow = new ArrayList<Bucket>();
     private int count = 0;
     private int incount = 0;
+    
     public void add_record(String key, int page_num, int offset)
     {
         int hash = get_hash(key);
@@ -26,14 +27,13 @@ public class MakeIndex
         {
             if (table[hash].is_full())
             {
-                if (overflow_bucket.size() == 59)
+                if (overflow_bucket.is_full())
                 {
-                    ArrayList<Record> add = overflow_bucket;
-                    System.out.println(add.size());
-                    overflow.add(add);
-                    overflow_bucket.clear();
+                    Bucket bucket = overflow_bucket;
+                    overflow.add(bucket);
+                    overflow_bucket = new Bucket();
                 }
-                overflow_bucket.add(record);
+                overflow_bucket.add_record(record);
             }
             else
             {
@@ -51,12 +51,12 @@ public class MakeIndex
     {
         int os = 0;
         int ms = 0;
-        for (ArrayList<Record> a : overflow)
+        for (Bucket a : overflow)
         {
-            System.out.println(a.size());
-            os += a.size();
+            System.out.println(a.get_size());
+            os += a.get_size();
         }
-        os += overflow_bucket.size();
+        os += overflow_bucket.get_size();
         for (int index = 0; index < table.length; ++index)
         {
             if (table[index] != null)
@@ -90,23 +90,23 @@ public class MakeIndex
             }
             for (int index = 0; index < overflow.size(); ++index)
             {
-                ArrayList<Record> bucket = overflow.get(index);
-                for (Record record : bucket)
+                Bucket bucket = overflow.get(index);
+                for (Record record : bucket.get_records())
                 {
                     //System.out.println(record.get_key());
                     output = create_record_for_print(output, record);
                     fos.write(output);
                     count++;
                 }
-                eofByteAddOn(fos, bucket.size());
+                eofByteAddOn(fos, bucket.get_size());
             }
-            for (Record record : overflow_bucket)
+            for (Record record : overflow_bucket.get_records())
             {
                 output = create_record_for_print(output, record);
                 fos.write(output);
                 count++;
             }
-            eofByteAddOn(fos, overflow_bucket.size());
+            eofByteAddOn(fos, overflow_bucket.get_size());
             System.out.println(count);
             System.out.println(incount);
 
