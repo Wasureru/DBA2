@@ -35,8 +35,8 @@ public class UseIndex implements dbimpl
         try
         {
             raf = new RandomAccessFile("hash.4096", "r");
-            raf.seek(hash * 12288);
-            byte[] bucket = new byte[12288];
+            raf.seek(hash * 4096);
+            byte[] bucket = new byte[4096];
             raf.read(bucket);
             check_bucket(bucket);
         }
@@ -59,7 +59,6 @@ public class UseIndex implements dbimpl
         }
         if (found)
         {
-            System.out.println("here");
             get_record();
         }
     }
@@ -69,12 +68,12 @@ public class UseIndex implements dbimpl
         int next = 0;
         while (true)
         {
-            byte[] key = new byte[200];
+            byte[] key = new byte[12];
             byte[] page_num = new byte[4];
             byte[] offset = new byte[4];
-            System.arraycopy(bucket, next, key, 0, 200);
-            System.arraycopy(bucket, next + 200, page_num, 0, 4);
-            System.arraycopy(bucket, next + 204, offset, 0, 4);
+            System.arraycopy(bucket, next, key, 0, 12);
+            System.arraycopy(bucket, next + 12, page_num, 0, 4);
+            System.arraycopy(bucket, next + 16, offset, 0, 4);
             if (check_key(key, page_num, offset))
             {
                 found = true;
@@ -82,7 +81,7 @@ public class UseIndex implements dbimpl
             }
             else
             {
-                next += 208;
+                next += 20;
             }
         }
     }
@@ -117,8 +116,8 @@ public class UseIndex implements dbimpl
         try
         {
             raf = new RandomAccessFile("hash.4096", "r");
-            raf.seek(64 * 12288);
-            byte[] bucket = new byte[12288];
+            raf.seek(16384 * 4096);
+            byte[] bucket = new byte[4096];
             while (true)
             {
                 int EOF = raf.read(bucket);
@@ -152,15 +151,15 @@ public class UseIndex implements dbimpl
         }
 
     }
+    
     private boolean check_key(byte[] index, byte[] page_num, byte[] offset)
     {
         String record = new String(index);
-        String BN_NAME = record.substring(0, 200);
-        if (BN_NAME.toLowerCase().trim().equals(key.toLowerCase().trim()))
+        String BN_NAME = record.substring(0, 12);
+        if (key.startsWith(BN_NAME) || BN_NAME.startsWith(key))
         {
             this.page_num = ByteBuffer.wrap(page_num).getInt();
             this.offset =  ByteBuffer.wrap(offset).getInt();
-            System.out.println(BN_NAME.trim() + " | " + this.page_num + " | " + this.offset);
             return true;
         }
         return false;
@@ -168,14 +167,13 @@ public class UseIndex implements dbimpl
 
     private int get_hash(String key)
     {
-        return key.hashCode() & 63;
+        return key.hashCode() & 16383;
     }
     
     public void printRecord(byte[] rec, String input)
     {
         String record = new String(rec);
         String BN_NAME = get_field(record, RID_SIZE + REGISTER_NAME_SIZE, RID_SIZE + REGISTER_NAME_SIZE + BN_NAME_SIZE).trim();
-        System.out.println(BN_NAME + " | " + input);
         if (BN_NAME.toLowerCase().contains(input.toLowerCase()))
         {
             String BN_STATUS = get_field(record, BN_STATUS_OFFSET, BN_REG_DT_OFFSET).trim();

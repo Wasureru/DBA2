@@ -16,7 +16,7 @@ public class Bucket
     
     public boolean is_full()
     {
-        return records.size() == 59;
+        return records.size() == 204;
     }
     
     public int get_size()

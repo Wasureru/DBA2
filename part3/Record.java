@@ -1,18 +1,19 @@
+import java.io.UnsupportedEncodingException;
 
 public class Record
 {
-    private final String key;
+    private byte[] key = new byte[12];
     private final int page_num;
     private final int offset;
     
-    public Record(String key, int page_num, int offset)
+    public Record(byte[] key, int page_num, int offset) throws UnsupportedEncodingException
     {
         this.key = key;
         this.page_num = page_num;
         this.offset = offset;
     }
     
-    public String get_key()
+    public byte[] get_key()
     {
         return key;
     }

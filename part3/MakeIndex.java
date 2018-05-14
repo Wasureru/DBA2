@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class MakeIndex
 {
-    private Bucket[] table = new Bucket[64];
+    private Bucket[] table = new Bucket[16384];
     private Bucket overflow_bucket = new Bucket();
     private ArrayList<Bucket> overflow = new ArrayList<Bucket>();
     private int count = 0;
@@ -16,7 +16,20 @@ public class MakeIndex
     public void add_record(String key, int page_num, int offset)
     {
         int hash = get_hash(key);
-        Record record = new Record(key, page_num, offset);
+        byte[] DATA_SRC = null;
+        byte[] temp = new byte[12];
+        Record record = null;
+        try
+        {
+            DATA_SRC = key.trim().getBytes("utf-8");
+            copy(DATA_SRC, 12, 0, temp);
+            record = new Record(DATA_SRC, page_num, offset);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         if (table[hash] == null)
         {
             Bucket new_bucket = new Bucket();
@@ -44,7 +57,7 @@ public class MakeIndex
     
     public int get_hash(String key)
     {
-        return key.hashCode() & 63;
+        return key.hashCode() & 16383;
     }
     
     private void sizes()
@@ -71,7 +84,7 @@ public class MakeIndex
         //sizes();
         File hashfile = new File("hash." + 4096);
         FileOutputStream fos = null;
-        byte[] output = new byte[208];
+        byte[] output = new byte[20];
         try
         {
             fos = new FileOutputStream(hashfile);
@@ -123,25 +136,26 @@ public class MakeIndex
         ByteBuffer offset = ByteBuffer.allocate(4);
         page_num.putInt(record.get_page_num());
         offset.putInt(record.get_offset());
-        copy(record.get_key(), 200, 0, output);
-        System.arraycopy(page_num.array(), 0, output, 200, 4);
-        System.arraycopy(offset.array(), 0, output, 204, 4);
+        copy(record.get_key(), 12, 0, output);
+        System.arraycopy(page_num.array(), 0, output, 12, 4);
+        System.arraycopy(offset.array(), 0, output, 16, 4);
         
-        incount++;
-        if (record.get_key().toLowerCase().contains("RUSSELL CORPORATE ADVISORY CLUB CONSULTING".toLowerCase()))
-        {
-            //System.out.println(record.get_key() + "|" + record.get_page_num() + "|" + record.get_offset());
-        }
         return output;
     }
     
-    public void copy(String entry, int SIZE, int DATA_OFFSET, byte[] rec) throws UnsupportedEncodingException
+    public void copy(byte[] entry, int SIZE, int DATA_OFFSET, byte[] rec) throws UnsupportedEncodingException
     {
         byte[] DATA = new byte[SIZE];
-        byte[] DATA_SRC = entry.trim().getBytes("utf-8");
-        if (entry != "")
+        if (entry != null)
         {
-            System.arraycopy(DATA_SRC, 0, DATA, 0, DATA_SRC.length);
+            if (entry.length > 12)
+            {
+                System.arraycopy(entry, 0, DATA, 0, 12);
+            }
+            else
+            {
+                System.arraycopy(entry, 0, DATA, 0, entry.length);
+            }
         }
         System.arraycopy(DATA, 0, rec, DATA_OFFSET, DATA.length);
     }
@@ -150,7 +164,7 @@ public class MakeIndex
     public void eofByteAddOn(FileOutputStream fos, int r_num) 
             throws IOException
      {
-        byte[] fPadding = new byte[12288-(208*r_num)];
+        byte[] fPadding = new byte[4096-(20*r_num)];
         fos.write(fPadding);
      }
 
