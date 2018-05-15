@@ -7,17 +7,21 @@ import java.util.ArrayList;
 
 public class MakeIndex
 {
-    private Bucket[] table = new Bucket[16384];
-    private Bucket overflow_bucket = new Bucket();
-    private ArrayList<Bucket> overflow = new ArrayList<Bucket>();
-    private int count = 0;
-    private int incount = 0;
-    
+    private final int         num_buckets     = 16384;
+    private final int         key_size        = 12;
+    private final int         int_size        = 4;
+    private Bucket[]          table           = new Bucket[num_buckets];
+    private Bucket            overflow_bucket = new Bucket();
+    private ArrayList<Bucket> overflow        = new ArrayList<Bucket>();
+    private int               count           = 0;
+    private int               incount         = 0;
+    private final int         record_size     = 20;
+
     public void add_record(String key, int page_num, int offset)
     {
         int hash = get_hash(key);
         byte[] DATA_SRC = null;
-        byte[] temp = new byte[12];
+        byte[] temp = new byte[key_size];
         Record record = null;
         try
         {
@@ -27,8 +31,7 @@ public class MakeIndex
         }
         catch (UnsupportedEncodingException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
         if (table[hash] == null)
         {
@@ -54,64 +57,51 @@ public class MakeIndex
             }
         }
     }
-    
+
     public int get_hash(String key)
     {
-        return key.hashCode() & 16383;
+        return key.hashCode() & num_buckets - 1;
     }
-    
-    private void sizes()
+
+    // write the hash file - iterate over the main array
+    // the overflow array and the final overflow bucket
+    // printing all to file
+    public void write_hash(int pagesize)
     {
-        int os = 0;
-        int ms = 0;
-        for (Bucket a : overflow)
-        {
-            System.out.println(a.get_size());
-            os += a.get_size();
-        }
-        os += overflow_bucket.get_size();
-        for (int index = 0; index < table.length; ++index)
-        {
-            if (table[index] != null)
-            ms += table[index].get_size();
-        }
-        int total = os + ms;
-        System.out.printf("in overflow %d| in main %d| total %d\n", os, ms, total);
-    }
-    
-    public void write_hash()
-    {
-        //sizes();
-        File hashfile = new File("hash." + 4096);
+        File hashfile = new File("hash." + pagesize);
         FileOutputStream fos = null;
-        byte[] output = new byte[20];
+        byte[] output = new byte[record_size];
         try
         {
             fos = new FileOutputStream(hashfile);
             for (int table_index = 0; table_index < table.length; ++table_index)
             {
-                try {
-                for (Record record : table[table_index].get_records())
+                try
                 {
-                    output = create_record_for_print(output, record);
-                    fos.write(output);
-                    count++;
+                    for (Record record : table[table_index].get_records())
+                    {
+                        output = create_record_for_print(output, record);
+                        fos.write(output);
+                        count++;
+                    }
+                    eofByteAddOn(fos, table[table_index].get_size(), pagesize);
                 }
-                eofByteAddOn(fos, table[table_index].get_size());
+                catch (NullPointerException e)
+                {
+                    eofByteAddOn(fos, 0, pagesize);
                 }
-                catch(NullPointerException e) { eofByteAddOn(fos, 0);}
             }
             for (int index = 0; index < overflow.size(); ++index)
             {
                 Bucket bucket = overflow.get(index);
                 for (Record record : bucket.get_records())
                 {
-                    //System.out.println(record.get_key());
+                    // System.out.println(record.get_key());
                     output = create_record_for_print(output, record);
                     fos.write(output);
                     count++;
                 }
-                eofByteAddOn(fos, bucket.get_size());
+                eofByteAddOn(fos, bucket.get_size(), pagesize);
             }
             for (Record record : overflow_bucket.get_records())
             {
@@ -119,38 +109,37 @@ public class MakeIndex
                 fos.write(output);
                 count++;
             }
-            eofByteAddOn(fos, overflow_bucket.get_size());
+            eofByteAddOn(fos, overflow_bucket.get_size(), pagesize);
             System.out.println(count);
             System.out.println(incount);
-
         }
         catch (IOException e)
         {
             System.err.println("Stream Error: " + e.getMessage());
         }
     }
-    
+
+    // extract the info from the record and put it into byte arrays for printing
     private byte[] create_record_for_print(byte[] output, Record record) throws UnsupportedEncodingException
     {
-        ByteBuffer page_num = ByteBuffer.allocate(4);
-        ByteBuffer offset = ByteBuffer.allocate(4);
+        ByteBuffer page_num = ByteBuffer.allocate(int_size);
+        ByteBuffer offset = ByteBuffer.allocate(int_size);
         page_num.putInt(record.get_page_num());
         offset.putInt(record.get_offset());
-        copy(record.get_key(), 12, 0, output);
-        System.arraycopy(page_num.array(), 0, output, 12, 4);
-        System.arraycopy(offset.array(), 0, output, 16, 4);
-        
+        copy(record.get_key(), key_size, 0, output);
+        System.arraycopy(page_num.array(), 0, output, key_size, int_size);
+        System.arraycopy(offset.array(), 0, output, key_size + int_size, int_size);
         return output;
     }
-    
+
     public void copy(byte[] entry, int SIZE, int DATA_OFFSET, byte[] rec) throws UnsupportedEncodingException
     {
         byte[] DATA = new byte[SIZE];
         if (entry != null)
         {
-            if (entry.length > 12)
+            if (entry.length > key_size)
             {
-                System.arraycopy(entry, 0, DATA, 0, 12);
+                System.arraycopy(entry, 0, DATA, 0, key_size);
             }
             else
             {
@@ -160,12 +149,9 @@ public class MakeIndex
         System.arraycopy(DATA, 0, rec, DATA_OFFSET, DATA.length);
     }
 
-    
-    public void eofByteAddOn(FileOutputStream fos, int r_num) 
-            throws IOException
-     {
-        byte[] fPadding = new byte[4096-(20*r_num)];
+    public void eofByteAddOn(FileOutputStream fos, int r_num, int pagesize) throws IOException
+    {
+        byte[] fPadding = new byte[pagesize - (record_size * r_num)];
         fos.write(fPadding);
-     }
-
+    }
 }

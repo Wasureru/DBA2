@@ -4,15 +4,15 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 
-/**
- * Database Systems - HEAP IMPLEMENTATION
- */
-public class dbquery implements dbimpl
+public class hashload implements dbimpl
 {
+    // object for creating the hash index while heap is being built
+    MakeIndex hi = new MakeIndex();
+
     // initialize
     public static void main(String args[])
     {
-        dbquery load = new dbquery();
+        hashload load = new hashload();
         // calculate query time
         long startTime = System.currentTimeMillis();
         load.readArguments(args);
@@ -23,16 +23,16 @@ public class dbquery implements dbimpl
     // reading command line arguments
     public void readArguments(String args[])
     {
-        if (args.length == 2)
+        if (args.length == 1)
         {
-            if (isInteger(args[1]))
+            if (isInteger(args[0]))
             {
-                readHeap(args[0], Integer.parseInt(args[1]));
+                readHeap(Integer.parseInt(args[0]));
             }
         }
         else
         {
-            System.out.println("Error: only pass in two arguments");
+            System.out.println("Error: only pass in one argument");
         }
     }
 
@@ -47,13 +47,14 @@ public class dbquery implements dbimpl
         }
         catch (NumberFormatException e)
         {
-            e.printStackTrace();
+            System.out.println("just a page size, thanks");
+            System.exit(0);
         }
         return isValidInt;
     }
 
     // read heapfile by page
-    public void readHeap(String name, int pagesize)
+    public void readHeap(int pagesize)
     {
         File heapfile = new File(HEAP_FNAME + pagesize);
         int intSize = 4;
@@ -90,7 +91,7 @@ public class dbquery implements dbimpl
                         }
                         else
                         {
-                            printRecord(bRecord, name);
+                            send_to_hash(bRecord, pageCount, recCount);
                             recordLen += RECORD_SIZE;
                         }
                         recCount++;
@@ -111,6 +112,8 @@ public class dbquery implements dbimpl
                 }
                 pageCount++;
             }
+            // write the hash when all records have been processed
+            hi.write_hash(pagesize);
         }
         catch (FileNotFoundException e)
         {
@@ -123,13 +126,11 @@ public class dbquery implements dbimpl
     }
 
     // returns records containing the argument text from shell
-    public void printRecord(byte[] rec, String input)
+    public void send_to_hash(byte[] rec, int page_num, int offset)
     {
         String record = new String(rec);
         String BN_NAME = record.substring(RID_SIZE + REGISTER_NAME_SIZE, RID_SIZE + REGISTER_NAME_SIZE + BN_NAME_SIZE);
-        if (BN_NAME.toLowerCase().contains(input.toLowerCase()))
-        {
-            System.out.println(record);
-        }
+        // send the record off to be added to the hash index
+        hi.add_record(BN_NAME.trim(), page_num, offset);
     }
 }

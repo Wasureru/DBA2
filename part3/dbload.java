@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
  */
 public class dbload implements dbimpl
 {
+    // object for creating the hash index while heap is being built
     MakeIndex hi = new MakeIndex();
 
     // initialize
@@ -87,9 +88,11 @@ public class dbload implements dbimpl
                     pageCount++;
                 }
                 recCount++;
+                // send the record off to be added to the hash index
                 hi.add_record(entry[1], pageCount, outCount);
             }
-            hi.write_hash();
+            // write the hash when all records have been processed
+            hi.write_hash(pagesize);
         }
         catch (FileNotFoundException e)
         {
