@@ -1,0 +1,77 @@
+commit 41bc5b7a2735ccd6fb19e15cc882f333879ff561
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Tue May 15 10:20:06 2018 +0000
+
+    final commit (probably)
+
+commit 43a28962863701a1f2864c4d968f4b4c7160d0fa
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Mon May 14 10:51:29 2018 +0000
+
+    fixed memory issue - require comments/exception messages
+
+commit 59f572bb79d9d36e4b57f6d1671054c547706fa9
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 10:11:11 2018 +0000
+
+    logic finished - code cleanup required
+
+commit 6c3e01ff6ed079db32b1c17663099e9c3369f3c6
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 09:05:40 2018 +0000
+
+    fixed data loss issue
+
+commit 05a7d9c30dc973358ec73395ec4082e8500ababd
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 08:49:57 2018 +0000
+
+    get input, hash, check key, get page/offset
+
+commit 52adb8877e2b08bbe14afd7627b3c65a5ab6a287
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 08:49:03 2018 +0000
+
+    some debugging functionality added - losing data
+
+commit 4680ee4f01666e7c17c42cf1de352f5dcb443836
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:40:48 2018 +0000
+
+    a record class for holing the key/page/offset before writing to file
+
+commit db299c9a88aeeebcec2a643adc9703f9e9c68b91
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:40:10 2018 +0000
+
+    code to build and write the hash index
+
+commit ef8379c6b4952686b92ff3979f533e2840af0b23
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:39:34 2018 +0000
+
+    a Bucket class to group buckets before writing to file
+
+commit c9d65ee79b80ab8ea8ed0416160d148453b4f2a8
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:38:47 2018 +0000
+
+    was ignoreing files it shouldnt have
+
+commit 0a78d1a0f7ab2bbe824081d08aeee2e05d9bf3af
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:26:49 2018 +0000
+
+    no changes
+
+commit 9c48416ac57a40e289d60e57860cd93891265631
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 11 05:24:41 2018 +0000
+
+    basic clean script and git ignore edit
+
+commit a9acd081eba3da7cf049cc5c75d7c6175d5bdbdd
+Author: liam_ryan <s3606826@student.rmit.edu.au>
+Date:   Fri May 4 10:39:33 2018 +0000
+
+    initial commit - a2 - with provided sample code
